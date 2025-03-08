@@ -49,8 +49,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
     // Update port when transport changes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
-        _portController.text =
-            _selectedTransport == TransportType.TLS ? '5061' : '5060';
+        _portController.text = '5060';
       });
     });
   }
@@ -75,8 +74,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
   void _loadSettings() async {
     _preferences = await SharedPreferences.getInstance();
     setState(() {
-      _portController.text =
-          _selectedTransport == TransportType.TLS ? '5061' : '5060';
+      _portController.text = '5060';
       _wsUriController.text =
           _preferences.getString('ws_uri') ?? 'wss://tryit.jssip.net:10443';
       _sipUriController.text =
@@ -203,8 +201,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
               textAlign: TextAlign.center,
             ),
           ],
-          if (_selectedTransport == TransportType.TCP ||
-              _selectedTransport == TransportType.TLS) ...[
+          if (_selectedTransport == TransportType.TCP) ...[
             Text('Port', style: TextStyle(color: textLabelColor)),
             SizedBox(height: 5),
             TextFormField(
@@ -299,13 +296,6 @@ class _MyRegisterWidget extends State<RegisterWidget>
                           _selectedTransport = value!;
                         })),
                     child: Text("TCP")),
-                RadioMenuButton<TransportType>(
-                    value: TransportType.TLS,
-                    groupValue: _selectedTransport,
-                    onChanged: ((value) => setState(() {
-                          _selectedTransport = value!;
-                        })),
-                    child: Text("TLS")),
                 RadioMenuButton<TransportType>(
                     value: TransportType.WS,
                     groupValue: _selectedTransport,

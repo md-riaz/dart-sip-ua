@@ -1,0 +1,1 @@
+C:\flutter\projects\dart-sip-ua\example\build\app\intermediates\cxx\Debug\6s2j331t\obj\x86_64

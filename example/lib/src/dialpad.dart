@@ -45,7 +45,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
     _dest =
         _preferences.getString('dest') ?? _preferences.getString('auth_user');
     _textController = TextEditingController(text: _dest);
-    _textController!.text = _dest!;
+    _textController!.text = _dest ?? '';
 
     setState(() {});
   }
