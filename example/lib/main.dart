@@ -147,8 +147,7 @@ Future<void> onStart(ServiceInstance service) async {
   Timer.periodic(
     const Duration(seconds: 1),
     (timer) async {
-      if (service is AndroidServiceInstance &&
-          await service.isForegroundService()) {
+      if (service is AndroidServiceInstance) {
         flutterLocalNotificationsPlugin.show(
           notificationId,
           'COOL SERVICE',
