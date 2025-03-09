@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:sip_ua/sip_ua.dart';
 
@@ -135,6 +136,8 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
       case CallStateEnum.ENDED:
       case CallStateEnum.FAILED:
         _backToDialPad();
+        // stop background service on call ended
+        stopService();
         break;
       case CallStateEnum.UNMUTED:
       case CallStateEnum.MUTED:
@@ -143,6 +146,8 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
       case CallStateEnum.ACCEPTED:
       case CallStateEnum.CONFIRMED:
         setState(() => _callConfirmed = true);
+        // start background service on call started
+        startService();
         break;
       case CallStateEnum.HOLD:
       case CallStateEnum.UNHOLD:
@@ -151,6 +156,19 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
       case CallStateEnum.REFER:
         break;
     }
+  }
+
+  Future<void> startService() async {
+    final service = FlutterBackgroundService();
+    final isRunning = await service.isRunning();
+    if (!isRunning) {
+      await service.startService();
+    }
+  }
+
+  Future<void> stopService() async {
+    final service = FlutterBackgroundService();
+    service.invoke("stop");
   }
 
   @override
