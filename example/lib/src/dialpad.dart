@@ -59,7 +59,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
     final dest = _textController?.text;
     if (defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS) {
-      await Permission.microphone.request();
+      await [Permission.microphone, Permission.notification].request();
       await Permission.camera.request();
     }
     if (dest == null || dest.isEmpty) {
