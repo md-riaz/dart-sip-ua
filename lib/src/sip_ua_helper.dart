@@ -163,6 +163,13 @@ class SIPUAHelper extends EventManager {
       _settings.sockets!.add(socket);
     }
 
+    if (uaSettings.transportType == TransportType.UDP) {
+      SIPUAUdpSocket socket = SIPUAUdpSocket(
+          uaSettings.host ?? '0.0.0.0', uaSettings.port ?? '5090',
+          messageDelay: 1);
+      _settings.sockets!.add(socket);
+    }
+
     _settings.transportType = uaSettings.transportType!;
     _settings.uri =
         uaSettings.uri != null ? Utils.normalizeTarget(uaSettings.uri!) : null;
