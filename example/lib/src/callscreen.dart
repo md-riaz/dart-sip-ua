@@ -58,6 +58,14 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
 
   Call? get call => widget._call;
 
+  /// Helper method to truncate long text for display
+  String _truncateText(String text, int maxLength) {
+    if (text.length <= maxLength) {
+      return text;
+    }
+    return '${text.substring(0, maxLength)}...';
+  }
+
   @override
   initState() {
     super.initState();
@@ -369,9 +377,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
             children: activeCalls.map((activeCall) {
               final sessionId = activeCall.session.id ?? 'Unknown ID';
               final remoteId = activeCall.remote_identity ?? 'Unknown Caller';
-              final displayId = sessionId.length > _maxCallIdDisplayLength 
-                  ? '${sessionId.substring(0, _maxCallIdDisplayLength)}...' 
-                  : sessionId;
+              final displayId = _truncateText(sessionId, _maxCallIdDisplayLength);
               return ListTile(
                 title: Text(remoteId),
                 subtitle: Text('Call: $displayId'),

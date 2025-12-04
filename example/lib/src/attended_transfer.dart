@@ -48,15 +48,22 @@ extension AttendedTransferExtension on Call {
     }
 
     // Extract the call ID from the session ID
-    // The session ID format is: call-id + from_tag
-    // We need to remove the from_tag to get the pure call-id for the Replaces header
+    // Session ID format in dart-sip-ua: call-id + from_tag
+    // Example: "abc123def456" + "tag-789" = "abc123def456tag-789"
+    // 
+    // For the SIP REFER Replaces header, we need just the call-id part.
+    // This is defined in RTCSession (rtc_session.dart:344):
+    //   _id = _request.call_id + _from_tag;
+    //
+    // We safely extract the call-id by removing the from_tag suffix
     String callId = sessionId;
     if (fromTag.isNotEmpty && callId.endsWith(fromTag)) {
-      // Verify we're not removing the entire callId
+      // Verify we're not removing the entire callId (sanity check)
       if (callId.length > fromTag.length) {
         callId = callId.substring(0, callId.length - fromTag.length);
       } else {
-        debugPrint('Warning: Session ID format unexpected, using as-is');
+        // This should never happen with proper session setup
+        debugPrint('Warning: Session ID format unexpected (ID: $sessionId, fromTag: $fromTag), using as-is');
       }
     }
 
