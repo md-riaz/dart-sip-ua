@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:sip_ua/sip_ua.dart';
 
 /// Helper class to manage multiple active calls
@@ -11,7 +12,7 @@ class CallManager {
   void addCall(Call call) {
     final sessionId = call.session.id;
     if (sessionId == null) {
-      print('Warning: Attempting to add call with null session ID');
+      debugPrint('Warning: Attempting to add call with null session ID');
       return;
     }
     if (!_activeCalls.any((c) => c.session.id == sessionId)) {
@@ -23,7 +24,7 @@ class CallManager {
   void removeCall(Call call) {
     final sessionId = call.session.id;
     if (sessionId == null) {
-      print('Warning: Attempting to remove call with null session ID');
+      debugPrint('Warning: Attempting to remove call with null session ID');
       return;
     }
     _activeCalls.removeWhere((c) => c.session.id == sessionId);

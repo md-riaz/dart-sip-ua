@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:sip_ua/sip_ua.dart';
 
 /// Helper class to hold replaces information for attended transfer
@@ -70,20 +71,20 @@ extension AttendedTransferExtension on Call {
       // Set up event handlers for the refer
       referSubscriber.on(EventReferTrying(), (EventReferTrying data) {
         // REFER request is being sent
-        print('Attended transfer: REFER request trying');
+        debugPrint('Attended transfer: REFER request trying');
       });
       referSubscriber.on(EventReferProgress(), (EventReferProgress data) {
         // REFER request is in progress
-        print('Attended transfer: REFER request in progress');
+        debugPrint('Attended transfer: REFER request in progress');
       });
       referSubscriber.on(EventReferAccepted(), (EventReferAccepted data) {
         // REFER was accepted, terminate the session
-        print('Attended transfer: REFER accepted, terminating session');
+        debugPrint('Attended transfer: REFER accepted, terminating session');
         session.terminate();
       });
       referSubscriber.on(EventReferFailed(), (EventReferFailed data) {
         // REFER failed
-        print('Attended transfer: REFER failed - ${data.cause}');
+        debugPrint('Attended transfer: REFER failed - ${data.cause}');
       });
     }
   }
