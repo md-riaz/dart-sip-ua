@@ -40,14 +40,16 @@ extension AttendedTransferExtension on Call {
     String? fromTag = targetCall.session.from_tag;
     String? toTag = targetCall.session.to_tag;
     String? sessionId = targetCall.session.id;
+    String? remoteIdentity = targetCall.remote_identity;
 
-    if (fromTag == null || toTag == null || sessionId == null) {
+    if (fromTag == null || toTag == null || sessionId == null || remoteIdentity == null) {
       throw Exception('Cannot perform attended transfer: missing session information');
     }
 
     // The session ID has the from_tag appended to it, so we need to remove it
+    // Only remove if the sessionId actually ends with the exact fromTag
     String callId = sessionId;
-    if (callId.endsWith(fromTag)) {
+    if (fromTag.isNotEmpty && callId.endsWith(fromTag)) {
       callId = callId.substring(0, callId.length - fromTag.length);
     }
 
@@ -60,19 +62,29 @@ extension AttendedTransferExtension on Call {
 
     // Perform the REFER with replaces header
     // Note: We call session.refer directly as it already supports options parameter
-    final referSubscriber = session.refer(targetCall.remote_identity!, {
+    final referSubscriber = session.refer(remoteIdentity, {
       'replaces': replacesInfo,
     });
     
     if (referSubscriber != null) {
       // Set up event handlers for the refer
-      referSubscriber.on(EventReferTrying(), (EventReferTrying data) {});
-      referSubscriber.on(EventReferProgress(), (EventReferProgress data) {});
+      referSubscriber.on(EventReferTrying(), (EventReferTrying data) {
+        // REFER request is being sent
+        print('Attended transfer: REFER request trying');
+      });
+      referSubscriber.on(EventReferProgress(), (EventReferProgress data) {
+        // REFER request is in progress
+        print('Attended transfer: REFER request in progress');
+      });
       referSubscriber.on(EventReferAccepted(), (EventReferAccepted data) {
-        // Terminate the session when transfer is accepted
+        // REFER was accepted, terminate the session
+        print('Attended transfer: REFER accepted, terminating session');
         session.terminate();
       });
-      referSubscriber.on(EventReferFailed(), (EventReferFailed data) {});
+      referSubscriber.on(EventReferFailed(), (EventReferFailed data) {
+        // REFER failed
+        print('Attended transfer: REFER failed - ${data.cause}');
+      });
     }
   }
 }

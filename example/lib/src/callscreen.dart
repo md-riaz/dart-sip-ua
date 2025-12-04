@@ -364,9 +364,11 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: activeCalls.map((activeCall) {
+              final sessionId = activeCall.session.id ?? 'Unknown ID';
+              final remoteId = activeCall.remote_identity ?? 'Unknown Caller';
               return ListTile(
-                title: Text(activeCall.remote_identity ?? 'Unknown'),
-                subtitle: Text('Call ID: ${activeCall.session.id}'),
+                title: Text(remoteId),
+                subtitle: Text('Call: ${sessionId.length > 20 ? sessionId.substring(0, 20) + '...' : sessionId}'),
                 onTap: () {
                   Navigator.of(context).pop();
                   _performAttendedTransfer(activeCall);
