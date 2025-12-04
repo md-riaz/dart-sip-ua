@@ -59,8 +59,20 @@ extension AttendedTransferExtension on Call {
     );
 
     // Perform the REFER with replaces header
-    refer(targetCall.remote_identity!, {
+    // Note: We call session.refer directly as it already supports options parameter
+    final referSubscriber = session.refer(targetCall.remote_identity!, {
       'replaces': replacesInfo,
     });
+    
+    if (referSubscriber != null) {
+      // Set up event handlers for the refer
+      referSubscriber.on(EventReferTrying(), (EventReferTrying data) {});
+      referSubscriber.on(EventReferProgress(), (EventReferProgress data) {});
+      referSubscriber.on(EventReferAccepted(), (EventReferAccepted data) {
+        // Terminate the session when transfer is accepted
+        session.terminate();
+      });
+      referSubscriber.on(EventReferFailed(), (EventReferFailed data) {});
+    }
   }
 }

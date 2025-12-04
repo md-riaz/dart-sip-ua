@@ -124,11 +124,6 @@ class SIPUAHelper extends EventManager {
     return _calls[id];
   }
 
-  /// Get all active calls
-  List<Call> get activeCalls {
-    return _calls.values.toList();
-  }
-
   Future<void> renegotiate({
     required Call call,
     required bool voiceOnly,
@@ -563,9 +558,9 @@ class Call {
     _session.answer(options);
   }
 
-  void refer(String target, [Map<String, dynamic>? options]) {
+  void refer(String target) {
     assert(_session != null, 'ERROR(refer): rtc session is invalid!');
-    ReferSubscriber refer = _session.refer(target, options)!;
+    ReferSubscriber refer = _session.refer(target)!;
     refer.on(EventReferTrying(), (EventReferTrying data) {});
     refer.on(EventReferProgress(), (EventReferProgress data) {});
     refer.on(EventReferAccepted(), (EventReferAccepted data) {

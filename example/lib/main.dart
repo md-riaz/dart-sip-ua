@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:sip_ua/sip_ua.dart';
 
 import 'src/about.dart';
+import 'src/call_manager.dart';
 import 'src/callscreen.dart';
 import 'src/dialpad.dart';
 import 'src/register.dart';
@@ -32,12 +33,14 @@ typedef PageContentBuilder = Widget Function(
 // ignore: must_be_immutable
 class MyApp extends StatelessWidget {
   final SIPUAHelper _helper = SIPUAHelper();
-  Map<String, PageContentBuilder> routes = {
+  final CallManager _callManager = CallManager();
+  
+  Map<String, PageContentBuilder> get routes => {
     '/': ([SIPUAHelper? helper, Object? arguments]) => DialPadWidget(helper),
     '/register': ([SIPUAHelper? helper, Object? arguments]) =>
         RegisterWidget(helper),
     '/callscreen': ([SIPUAHelper? helper, Object? arguments]) =>
-        CallScreenWidget(helper, arguments as Call?),
+        CallScreenWidget(helper, arguments as Call?, callManager: _callManager),
     '/about': ([SIPUAHelper? helper, Object? arguments]) => AboutWidget(),
   };
 

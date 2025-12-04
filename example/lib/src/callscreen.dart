@@ -6,13 +6,15 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:sip_ua/sip_ua.dart';
 
 import 'attended_transfer.dart';
+import 'call_manager.dart';
 import 'widgets/action_button.dart';
 
 class CallScreenWidget extends StatefulWidget {
   final SIPUAHelper? _helper;
   final Call? _call;
+  final CallManager? callManager;
 
-  CallScreenWidget(this._helper, this._call, {Key? key}) : super(key: key);
+  CallScreenWidget(this._helper, this._call, {this.callManager, Key? key}) : super(key: key);
 
   @override
   State<CallScreenWidget> createState() => _MyCallScreenWidget();
@@ -43,6 +45,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   late Timer _timer;
 
   SIPUAHelper? get helper => widget._helper;
+  CallManager? get callManager => widget.callManager;
 
   bool get voiceOnly => call!.voiceOnly && !call!.remote_has_video;
 
@@ -58,6 +61,10 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
     _initRenderers();
     helper!.addSipUaHelperListener(this);
     _startTimer();
+    // Register this call with the call manager
+    if (callManager != null && call != null) {
+      callManager!.addCall(call!);
+    }
   }
 
   @override
@@ -65,6 +72,10 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
     super.deactivate();
     helper!.removeSipUaHelperListener(this);
     _disposeRenderers();
+    // Unregister this call from the call manager
+    if (callManager != null && call != null) {
+      callManager!.removeCall(call!);
+    }
   }
 
   void _startTimer() {
@@ -289,9 +300,9 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
 
   void _handleTransfer() {
     // Get all active calls excluding the current one
-    final activeCalls = helper!.activeCalls
-        .where((c) => c.session.id != call!.session.id)
-        .toList();
+    final activeCalls = callManager != null
+        ? callManager!.getOtherActiveCalls(call!)
+        : <Call>[];
 
     // Check if there are other active calls for attended transfer
     if (activeCalls.isNotEmpty) {
@@ -766,10 +777,33 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
 
   @override
   Widget build(BuildContext context) {
+    // Get count of other active calls (excluding current call)
+    final otherActiveCalls = callManager != null
+        ? callManager!.getOtherActiveCalls(call!).length
+        : 0;
+    
+    final titleText = otherActiveCalls > 0 
+        ? '[$direction] ${_state.name} (+$otherActiveCalls call${otherActiveCalls > 1 ? 's' : ''})'
+        : '[$direction] ${_state.name}';
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('[$direction] ${_state.name}'),
+        title: Text(titleText),
+        actions: otherActiveCalls > 0
+            ? [
+                Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: Center(
+                    child: Icon(
+                      Icons.call,
+                      color: Colors.green,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ]
+            : null,
       ),
       body: _buildContent(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
