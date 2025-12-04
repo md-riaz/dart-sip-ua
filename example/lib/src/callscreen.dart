@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:sip_ua/sip_ua.dart';
 
+import 'attended_transfer.dart';
 import 'widgets/action_button.dart';
 
 class CallScreenWidget extends StatefulWidget {
@@ -287,6 +288,119 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   }
 
   void _handleTransfer() {
+    // Get all active calls excluding the current one
+    final activeCalls = helper!.activeCalls
+        .where((c) => c.session.id != call!.session.id)
+        .toList();
+
+    // Check if there are other active calls for attended transfer
+    if (activeCalls.isNotEmpty) {
+      _showTransferOptions(activeCalls);
+    } else {
+      _showBlindTransferDialog();
+    }
+  }
+
+  void _showTransferOptions(List<Call> activeCalls) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Transfer Options'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('You have ${activeCalls.length} active call(s).'),
+              SizedBox(height: 16),
+              Text('Choose transfer type:'),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Attended Transfer'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showAttendedTransferDialog(activeCalls);
+              },
+            ),
+            TextButton(
+              child: Text('Blind Transfer'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showBlindTransferDialog();
+              },
+            ),
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showAttendedTransferDialog(List<Call> activeCalls) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select call to transfer to'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: activeCalls.map((activeCall) {
+              return ListTile(
+                title: Text(activeCall.remote_identity ?? 'Unknown'),
+                subtitle: Text('Call ID: ${activeCall.session.id}'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _performAttendedTransfer(activeCall);
+                },
+              );
+            }).toList(),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _performAttendedTransfer(Call targetCall) {
+    try {
+      // Perform attended transfer using the extension method
+      call!.attendedTransfer(targetCall);
+      
+      // Show a success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Attended transfer initiated'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Transfer failed: $e'),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showBlindTransferDialog() {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
