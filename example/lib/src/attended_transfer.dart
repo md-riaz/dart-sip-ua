@@ -2,16 +2,22 @@ import 'package:flutter/foundation.dart';
 import 'package:sip_ua/sip_ua.dart';
 
 /// Helper class to hold replaces information for attended transfer
+/// 
+/// Field names use snake_case to match the expected format in
+/// lib/src/rtc_session/refer_subscriber.dart which accesses:
+/// - options['replaces'].call_id
+/// - options['replaces'].to_tag
+/// - options['replaces'].from_tag
 class ReplacesInfo {
   ReplacesInfo({
-    required this.callId,
-    required this.fromTag,
-    required this.toTag,
+    required this.call_id,
+    required this.from_tag,
+    required this.to_tag,
   });
 
-  final String callId;
-  final String fromTag;
-  final String toTag;
+  final String call_id;
+  final String from_tag;
+  final String to_tag;
 }
 
 /// Extension on Call to support attended transfer
@@ -67,11 +73,12 @@ extension AttendedTransferExtension on Call {
       }
     }
 
-    // Create the replaces info
+    // Create the replaces info with snake_case field names
+    // to match what refer_subscriber.dart expects
     final replacesInfo = ReplacesInfo(
-      callId: callId,
-      fromTag: fromTag,
-      toTag: toTag,
+      call_id: callId,
+      from_tag: fromTag,
+      to_tag: toTag,
     );
 
     // Perform the REFER with replaces header
