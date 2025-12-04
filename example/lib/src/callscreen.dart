@@ -22,6 +22,9 @@ class CallScreenWidget extends StatefulWidget {
 
 class _MyCallScreenWidget extends State<CallScreenWidget>
     implements SipUaHelperListener {
+  // UI Constants
+  static const int _maxCallIdDisplayLength = 20;
+  
   RTCVideoRenderer? _localRenderer = RTCVideoRenderer();
   RTCVideoRenderer? _remoteRenderer = RTCVideoRenderer();
   double? _localVideoHeight;
@@ -366,9 +369,12 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
             children: activeCalls.map((activeCall) {
               final sessionId = activeCall.session.id ?? 'Unknown ID';
               final remoteId = activeCall.remote_identity ?? 'Unknown Caller';
+              final displayId = sessionId.length > _maxCallIdDisplayLength 
+                  ? '${sessionId.substring(0, _maxCallIdDisplayLength)}...' 
+                  : sessionId;
               return ListTile(
                 title: Text(remoteId),
-                subtitle: Text('Call: ${sessionId.length > 20 ? sessionId.substring(0, 20) + '...' : sessionId}'),
+                subtitle: Text('Call: $displayId'),
                 onTap: () {
                   Navigator.of(context).pop();
                   _performAttendedTransfer(activeCall);

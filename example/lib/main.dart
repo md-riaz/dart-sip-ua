@@ -32,10 +32,13 @@ typedef PageContentBuilder = Widget Function(
 
 // ignore: must_be_immutable
 class MyApp extends StatelessWidget {
+  MyApp({Key? key}) : super(key: key);
+  
   final SIPUAHelper _helper = SIPUAHelper();
   final CallManager _callManager = CallManager();
   
-  Map<String, PageContentBuilder> get routes => {
+  // Cache the routes map to avoid recreating on each access
+  late final Map<String, PageContentBuilder> routes = {
     '/': ([SIPUAHelper? helper, Object? arguments]) => DialPadWidget(helper),
     '/register': ([SIPUAHelper? helper, Object? arguments]) =>
         RegisterWidget(helper),

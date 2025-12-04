@@ -47,11 +47,17 @@ extension AttendedTransferExtension on Call {
       throw Exception('Cannot perform attended transfer: missing session information');
     }
 
-    // The session ID has the from_tag appended to it, so we need to remove it
-    // Only remove if the sessionId actually ends with the exact fromTag
+    // Extract the call ID from the session ID
+    // The session ID format is: call-id + from_tag
+    // We need to remove the from_tag to get the pure call-id for the Replaces header
     String callId = sessionId;
     if (fromTag.isNotEmpty && callId.endsWith(fromTag)) {
-      callId = callId.substring(0, callId.length - fromTag.length);
+      // Verify we're not removing the entire callId
+      if (callId.length > fromTag.length) {
+        callId = callId.substring(0, callId.length - fromTag.length);
+      } else {
+        debugPrint('Warning: Session ID format unexpected, using as-is');
+      }
     }
 
     // Create the replaces info
