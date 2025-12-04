@@ -3,6 +3,7 @@
 /// This file demonstrates how to use the attended transfer feature
 /// in a dart-sip-ua application.
 
+import 'package:flutter/foundation.dart';
 import 'package:sip_ua/sip_ua.dart';
 import 'attended_transfer.dart';
 import 'call_manager.dart';
@@ -69,13 +70,13 @@ void performAttendedTransferWithErrorHandling(Call call1, Call call2) {
     // Attempt the transfer
     call1.attendedTransfer(call2);
     
-    print('Attended transfer initiated successfully');
+    debugPrint('Attended transfer initiated successfully');
   } catch (e) {
     // Handle errors
     if (e.toString().contains('missing session information')) {
-      print('Error: One of the calls is not fully established');
+      debugPrint('Error: One of the calls is not fully established');
     } else {
-      print('Error performing attended transfer: $e');
+      debugPrint('Error performing attended transfer: $e');
     }
   }
 }
@@ -114,7 +115,7 @@ class AttendedTransferExample {
     try {
       fromCall.attendedTransfer(toCall);
     } catch (e) {
-      print('Transfer failed: $e');
+      debugPrint('Transfer failed: $e');
     }
   }
   
