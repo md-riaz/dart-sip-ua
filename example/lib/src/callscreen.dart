@@ -5,13 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:sip_ua/sip_ua.dart';
 
+import 'attended_transfer.dart';
+import 'call_manager.dart';
 import 'widgets/action_button.dart';
 
 class CallScreenWidget extends StatefulWidget {
   final SIPUAHelper? _helper;
   final Call? _call;
+  final CallManager? callManager;
 
-  CallScreenWidget(this._helper, this._call, {Key? key}) : super(key: key);
+  CallScreenWidget(this._helper, this._call, {this.callManager, Key? key}) : super(key: key);
 
   @override
   State<CallScreenWidget> createState() => _MyCallScreenWidget();
@@ -19,6 +22,9 @@ class CallScreenWidget extends StatefulWidget {
 
 class _MyCallScreenWidget extends State<CallScreenWidget>
     implements SipUaHelperListener {
+  // UI Constants
+  static const int _maxCallIdDisplayLength = 20;
+  
   RTCVideoRenderer? _localRenderer = RTCVideoRenderer();
   RTCVideoRenderer? _remoteRenderer = RTCVideoRenderer();
   double? _localVideoHeight;
@@ -42,6 +48,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   late Timer _timer;
 
   SIPUAHelper? get helper => widget._helper;
+  CallManager? get callManager => widget.callManager;
 
   bool get voiceOnly => call!.voiceOnly && !call!.remote_has_video;
 
@@ -51,12 +58,24 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
 
   Call? get call => widget._call;
 
+  /// Helper method to truncate long text for display
+  String _truncateText(String text, int maxLength) {
+    if (text.length <= maxLength) {
+      return text;
+    }
+    return '${text.substring(0, maxLength)}...';
+  }
+
   @override
   initState() {
     super.initState();
     _initRenderers();
     helper!.addSipUaHelperListener(this);
     _startTimer();
+    // Register this call with the call manager
+    if (callManager != null && call != null) {
+      callManager!.addCall(call!);
+    }
   }
 
   @override
@@ -64,6 +83,10 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
     super.deactivate();
     helper!.removeSipUaHelperListener(this);
     _disposeRenderers();
+    // Unregister this call from the call manager
+    if (callManager != null && call != null) {
+      callManager!.removeCall(call!);
+    }
   }
 
   void _startTimer() {
@@ -287,6 +310,122 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   }
 
   void _handleTransfer() {
+    // Get all active calls excluding the current one
+    final activeCalls = callManager != null
+        ? callManager!.getOtherActiveCalls(call!)
+        : <Call>[];
+
+    // Check if there are other active calls for attended transfer
+    if (activeCalls.isNotEmpty) {
+      _showTransferOptions(activeCalls);
+    } else {
+      _showBlindTransferDialog();
+    }
+  }
+
+  void _showTransferOptions(List<Call> activeCalls) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Transfer Options'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('You have ${activeCalls.length} active call(s).'),
+              SizedBox(height: 16),
+              Text('Choose transfer type:'),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Attended Transfer'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showAttendedTransferDialog(activeCalls);
+              },
+            ),
+            TextButton(
+              child: Text('Blind Transfer'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showBlindTransferDialog();
+              },
+            ),
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showAttendedTransferDialog(List<Call> activeCalls) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select call to transfer to'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: activeCalls.map((activeCall) {
+              final sessionId = activeCall.session.id ?? 'Unknown ID';
+              final remoteId = activeCall.remote_identity ?? 'Unknown Caller';
+              final displayId = _truncateText(sessionId, _maxCallIdDisplayLength);
+              return ListTile(
+                title: Text(remoteId),
+                subtitle: Text('Call: $displayId'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _performAttendedTransfer(activeCall);
+                },
+              );
+            }).toList(),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _performAttendedTransfer(Call targetCall) {
+    try {
+      // Perform attended transfer using the extension method
+      call!.attendedTransfer(targetCall);
+      
+      // Show a success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Attended transfer initiated'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Transfer failed: $e'),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showBlindTransferDialog() {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -652,10 +791,33 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
 
   @override
   Widget build(BuildContext context) {
+    // Get count of other active calls (excluding current call)
+    final otherActiveCalls = callManager != null
+        ? callManager!.getOtherActiveCalls(call!).length
+        : 0;
+    
+    final titleText = otherActiveCalls > 0 
+        ? '[$direction] ${_state.name} (+$otherActiveCalls call${otherActiveCalls > 1 ? 's' : ''})'
+        : '[$direction] ${_state.name}';
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('[$direction] ${_state.name}'),
+        title: Text(titleText),
+        actions: otherActiveCalls > 0
+            ? [
+                Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: Center(
+                    child: Icon(
+                      Icons.call,
+                      color: Colors.green,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ]
+            : null,
       ),
       body: _buildContent(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
